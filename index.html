@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🍽️ 今天吃什么？</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 16px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    p.subtitle {
+      color: #777;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .filter-bar select, .filter-bar input {
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      background: white;
+      color: #333;
+    }
+
+    .btn-random {
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+      color: white;
+      border: none;
+      padding: 14px 40px;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(245, 87, 108, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-random:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 24px rgba(245, 87, 108, 0.5);
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 480px;
+      width: 100%;
+      margin-top: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card.show { display: block; }
+
+    .food-emoji {
+      font-size: 4rem;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .food-name {
+      font-size: 1.6rem;
+      font-weight: bold;
+      text-align: center;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .food-category {
+      text-align: center;
+      color: #aaa;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: #f8f9ff;
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #999;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .stat-unit {
+      font-size: 0.75rem;
+      color: #aaa;
+    }
+
+    .satiety-bar-wrap {
+      margin-bottom: 20px;
+    }
+
+    .satiety-label {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .satiety-bar {
+      background: #eee;
+      border-radius: 20px;
+      height: 12px;
+      overflow: hidden;
+    }
+
+    .satiety-fill {
+      height: 100%;
+      border-radius: 20px;
+      background: linear-gradient(90deg, #43e97b, #38f9d7);
+      transition: width 0.6s ease;
+    }
+
+    .nutrition-section {
+      margin-bottom: 20px;
+    }
+
+    .nutrition-title {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 10px;
+    }
+
+    .nutrition-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      color: #666;
+      padding: 5px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .nutrition-row:last-child { border-bottom: none; }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: bold;
+      margin: 2px;
+    }
+
+    .badge-green { background: #e6faf0; color: #27ae60; }
+    .badge-blue  { background: #e8f4fd; color: #2980b9; }
+    .badge-orange{ background: #fff3e0; color: #e67e22; }
+
+    .badges-wrap { text-align: center; margin-bottom: 20px; }
+
+    .btn-again {
+      width: 100%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-again:hover { opacity: 0.9; }
+
+    .history-section {
+      max-width: 480px;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .history-title {
+      font-size: 0.9rem;
+      color: #aaa;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .history-item {
+      background: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #555;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🇲🇾 今天吃什么？</h1>
+  <p class="subtitle">马来西亚美食随机推荐，营养参考一目了然</p>
+
+  <div class="filter-bar">
+    <select id="filterCategory">
+      <option value="all">🍴 所有类型</option>
+      <option value="马来餐">🌙 马来餐</option>
+      <option value="印度餐">🫓 印度餐</option>
+      <option value="中餐">🥢 中餐</option>
+      <option value="娘惹餐">🍜 娘惹餐</option>
+      <option value="早餐">☀️ 早餐</option>
+      <option value="小食">🍢 小食</option>
+      <option value="特别嘉宾">🐱 特别嘉宾</option>
+    </select>
+    <select id="filterCalorie">
+      <option value="all">🔥 所有卡路里</option>
+      <option value="low">低卡 (&lt;400)</option>
+      <option value="mid">中卡 (400-700)</option>
+      <option value="high">高卡 (&gt;700)</option>
+    </select>
+  </div>
+
+  <button class="btn-random" onclick="pickRandom()">🎲 帮我选！</button>
+
+  <div class="card" id="resultCard">
+    <div class="food-emoji" id="foodEmoji">🍜</div>
+    <div class="food-name" id="foodName">-</div>
+    <div class="food-category" id="foodCategory">-</div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">🔥 卡路里</div>
+        <div class="stat-value" id="statCalorie">-</div>
+        <div class="stat-unit">kcal / 份</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">💪 蛋白质</div>
+        <div class="stat-value" id="statProtein">-</div>
+        <div class="stat-unit">克 / 份</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">🍚 碳水</div>
+        <div class="stat-value" id="statCarbs">-</div>
+        <div class="stat-unit">克 / 份</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">🧈 脂肪</div>
+        <div class="stat-value" id="statFat">-</div>
+        <div class="stat-unit">克 / 份</div>
+      </div>
+    </div>
+
+    <div class="satiety-bar-wrap">
+      <div class="satiety-label">
+        <span>😐 饱腹感</span>
+        <span id="satietyText">-</span>
+      </div>
+      <div class="satiety-bar">
+        <div class="satiety-fill" id="satietyFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="satiety-bar-wrap">
+      <div class="satiety-label">
+        <span>🥰 情绪价值</span>
+        <span id="moodText">-</span>
+      </div>
+      <div class="satiety-bar">
+        <div class="satiety-fill" id="moodFill" style="width:0%; background: linear-gradient(90deg, #f093fb, #f5576c);"></div>
+      </div>
+    </div>
+
+    <div class="nutrition-section">
+      <div class="nutrition-title">📊 营养详情</div>
+      <div class="nutrition-row"><span>膳食纤维</span><span id="nFiber">-</span></div>
+      <div class="nutrition-row"><span>钠 (盐分)</span><span id="nSodium">-</span></div>
+      <div class="nutrition-row"><span>维生素 C</span><span id="nVitC">-</span></div>
+      <div class="nutrition-row"><span>钙</span><span id="nCalcium">-</span></div>
+      <div class="nutrition-row"><span>铁</span><span id="nIron">-</span></div>
+    </div>
+
+    <div class="badges-wrap" id="badgesWrap"></div>
+
+    <button class="btn-again" onclick="pickRandom()">🔄 再换一个</button>
+  </div>
+
+  <div class="history-section" id="historySection" style="display:none">
+    <div class="history-title">📋 今日已推荐</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+<script>
+const foods = [
+  // 🐱 特别嘉宾
+  { name:"六月 🐱", emoji:"🐱", category:"特别嘉宾", calorie:0, protein:0, carbs:0, fat:0, satiety:100, mood:100, fiber:"无限爱", sodium:"0mg", vitC:"无限", calcium:"无限", iron:"无限", badges:["满分情绪","无价之宝","治愈系"] },
+
+  // 马来餐 Malay
+  { name:"Nasi Lemak（椰浆饭）", emoji:"🍚", category:"马来餐", calorie:644, protein:20, carbs:80, fat:28, satiety:85, mood:80, fiber:"3g", sodium:"900mg", vitC:"5mg", calcium:"80mg", iron:"3mg", badges:["经典","高热量"] },
+  { name:"Nasi Goreng（炒饭）", emoji:"🍳", category:"马来餐", calorie:700, protein:18, carbs:90, fat:25, satiety:82, mood:75, fiber:"2g", sodium:"1000mg", vitC:"3mg", calcium:"50mg", iron:"2mg", badges:["高热量","香辣"] },
+  { name:"Satay Ayam（鸡肉沙爹）", emoji:"🍢", category:"马来餐", calorie:365, protein:30, carbs:20, fat:15, satiety:70, mood:85, fiber:"1g", sodium:"600mg", vitC:"0mg", calcium:"30mg", iron:"2mg", badges:["高蛋白","低卡"] },
+  { name:"Rendang（仁当）", emoji:"🥘", category:"马来餐", calorie:490, protein:28, carbs:12, fat:32, satiety:88, mood:88, fiber:"2g", sodium:"800mg", vitC:"2mg", calcium:"40mg", iron:"4mg", badges:["高蛋白","超饱腹"] },
+  { name:"Ayam Goreng（炸鸡）", emoji:"🍗", category:"马来餐", calorie:380, protein:28, carbs:15, fat:22, satiety:78, mood:82, fiber:"1g", sodium:"700mg", vitC:"0mg", calcium:"30mg", iron:"2mg", badges:["高蛋白","香脆"] },
+  { name:"Nasi Biryani（印度香饭）", emoji:"🍛", category:"印度餐", calorie:680, protein:25, carbs:85, fat:22, satiety:88, mood:85, fiber:"3g", sodium:"950mg", vitC:"2mg", calcium:"60mg", iron:"4mg", badges:["超饱腹","香料丰富"] },
+
+  // 印度餐 Indian
+  { name:"Roti Canai（印度煎饼）", emoji:"🫓", category:"印度餐", calorie:360, protein:8, carbs:52, fat:14, satiety:65, mood:78, fiber:"2g", sodium:"500mg", vitC:"0mg", calcium:"40mg", iron:"2mg", badges:["低蛋白","早餐首选"] },
+  { name:"Roti Telur（鸡蛋煎饼）", emoji:"🥚", category:"印度餐", calorie:414, protein:14, carbs:52, fat:18, satiety:72, mood:75, fiber:"2g", sodium:"580mg", vitC:"0mg", calcium:"50mg", iron:"2mg", badges:["均衡","早餐"] },
+  { name:"Mee Goreng Mamak（印度炒面）", emoji:"🍜", category:"印度餐", calorie:660, protein:18, carbs:88, fat:22, satiety:82, mood:80, fiber:"3g", sodium:"1100mg", vitC:"8mg", calcium:"60mg", iron:"3mg", badges:["高热量","香辣"] },
+  { name:"Nasi Kandar（档口饭）", emoji:"🍛", category:"印度餐", calorie:750, protein:28, carbs:88, fat:28, satiety:90, mood:82, fiber:"3g", sodium:"1200mg", vitC:"5mg", calcium:"70mg", iron:"4mg", badges:["超饱腹","高热量"] },
+
+  // 中餐 Chinese
+  { name:"Char Kway Teow（炒粿条）", emoji:"🍜", category:"中餐", calorie:740, protein:20, carbs:95, fat:28, satiety:85, mood:85, fiber:"2g", sodium:"1300mg", vitC:"5mg", calcium:"60mg", iron:"4mg", badges:["高热量","经典"] },
+  { name:"Nasi Ayam（鸡饭）", emoji:"🍚", category:"中餐", calorie:520, protein:25, carbs:68, fat:15, satiety:80, mood:80, fiber:"1g", sodium:"800mg", vitC:"2mg", calcium:"40mg", iron:"2mg", badges:["高蛋白","均衡"] },
+  { name:"Wantan Mee（云吞面）", emoji:"🍝", category:"中餐", calorie:420, protein:18, carbs:60, fat:12, satiety:72, mood:75, fiber:"2g", sodium:"750mg", vitC:"3mg", calcium:"45mg", iron:"2mg", badges:["均衡","低脂"] },
+  { name:"Prawn Mee（虾面）", emoji:"🍜", category:"中餐", calorie:293, protein:16, carbs:40, fat:8, satiety:65, mood:72, fiber:"2g", sodium:"900mg", vitC:"5mg", calcium:"80mg", iron:"2mg", badges:["低卡","海鲜"] },
+  { name:"Bak Kut Teh（肉骨茶）", emoji:"🍲", category:"中餐", calorie:400, protein:30, carbs:10, fat:25, satiety:85, mood:83, fiber:"1g", sodium:"850mg", vitC:"2mg", calcium:"50mg", iron:"4mg", badges:["高蛋白","暖身"] },
+
+  // 娘惹/本地
+  { name:"Laksa（叻沙）", emoji:"🍜", category:"娘惹餐", calorie:534, protein:18, carbs:65, fat:22, satiety:80, mood:88, fiber:"3g", sodium:"1100mg", vitC:"8mg", calcium:"100mg", iron:"3mg", badges:["经典","浓郁"] },
+  { name:"Penang Laksa（槟城叻沙）", emoji:"🍜", category:"娘惹餐", calorie:436, protein:15, carbs:68, fat:10, satiety:75, mood:85, fiber:"4g", sodium:"950mg", vitC:"12mg", calcium:"80mg", iron:"2mg", badges:["低脂","酸辣"] },
+
+  // 早餐/小食
+  { name:"Kaya Toast + Teh Tarik", emoji:"🍞", category:"早餐", calorie:320, protein:8, carbs:48, fat:12, satiety:55, mood:90, fiber:"1g", sodium:"350mg", vitC:"0mg", calcium:"120mg", iron:"1mg", badges:["经典早餐","低卡"] },
+  { name:"Goreng Pisang（炸香蕉）", emoji:"🍌", category:"小食", calorie:260, protein:2, carbs:40, fat:10, satiety:45, mood:82, fiber:"2g", sodium:"80mg", vitC:"8mg", calcium:"20mg", iron:"1mg", badges:["低卡","小食"] },
+  { name:"Cucur Udang（虾煎饼）", emoji:"🦐", category:"小食", calorie:290, protein:10, carbs:35, fat:12, satiety:50, mood:78, fiber:"2g", sodium:"500mg", vitC:"5mg", calcium:"60mg", iron:"2mg", badges:["海鲜","小食"] },
+];
+
+let history = [];
+
+function getBadgeClass(b) {
+  const blue = ["高蛋白","均衡","低碳水","低脂"];
+  const green = ["低卡","高纤维","健康","养胃","清淡","维C高"];
+  if (blue.includes(b)) return "badge-blue";
+  if (green.includes(b)) return "badge-green";
+  return "badge-orange";
+}
+
+function getSatietyText(val) {
+  if (val >= 85) return "非常饱 😋";
+  if (val >= 65) return "比较饱 😊";
+  if (val >= 45) return "一般 😐";
+  return "不太饱 😅";
+}
+
+function getMoodText(val) {
+  if (val >= 100) return "无价之宝 🥰💯";
+  if (val >= 80) return "超级开心 😄";
+  if (val >= 60) return "心情不错 😊";
+  if (val >= 40) return "普通 😐";
+  return "没什么感觉 😑";
+}
+
+function pickRandom() {
+  const cat = document.getElementById("filterCategory").value;
+  const cal = document.getElementById("filterCalorie").value;
+
+  let pool = foods.filter(f => {
+    const catOk = cat === "all" || f.category === cat;
+    const calOk = cal === "all"
+      || (cal === "low" && f.calorie < 400)
+      || (cal === "mid" && f.calorie >= 400 && f.calorie <= 700)
+      || (cal === "high" && f.calorie > 700);
+    return catOk && calOk;
+  });
+
+  if (pool.length === 0) {
+    alert("😅 没有符合条件的食物，请调整筛选！");
+    return;
+  }
+
+  const food = pool[Math.floor(Math.random() * pool.length)];
+
+  document.getElementById("foodEmoji").textContent = food.emoji;
+  document.getElementById("foodName").textContent = food.name;
+  document.getElementById("foodCategory").textContent = "📁 " + food.category;
+  document.getElementById("statCalorie").textContent = food.calorie;
+  document.getElementById("statProtein").textContent = food.protein;
+  document.getElementById("statCarbs").textContent = food.carbs;
+  document.getElementById("statFat").textContent = food.fat;
+
+  document.getElementById("satietyFill").style.width = food.satiety + "%";
+  document.getElementById("satietyText").textContent = getSatietyText(food.satiety);
+
+  document.getElementById("moodFill").style.width = food.mood + "%";
+  document.getElementById("moodText").textContent = getMoodText(food.mood);
+
+  document.getElementById("nFiber").textContent = food.fiber;
+  document.getElementById("nSodium").textContent = food.sodium;
+  document.getElementById("nVitC").textContent = food.vitC;
+  document.getElementById("nCalcium").textContent = food.calcium;
+  document.getElementById("nIron").textContent = food.iron;
+
+  const badgesWrap = document.getElementById("badgesWrap");
+  badgesWrap.innerHTML = food.badges.map(b =>
+    `<span class="badge ${getBadgeClass(b)}">${b}</span>`
+  ).join("");
+
+  const card = document.getElementById("resultCard");
+  card.classList.remove("show");
+  void card.offsetWidth;
+  card.classList.add("show");
+
+  // History
+  if (!history.includes(food.name)) {
+    history.push(food.name);
+    updateHistory();
+  }
+}
+
+function updateHistory() {
+  const sec = document.getElementById("historySection");
+  const list = document.getElementById("historyList");
+  sec.style.display = "block";
+  list.innerHTML = history.map(n => `<div class="history-item">${n}</div>`).join("");
+}
+</script>
+
+</body>
+</html>
